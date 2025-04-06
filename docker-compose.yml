@@ -3,7 +3,7 @@ services:
     build:
       context: ./app/frontend
     expose:
-      - "8080" # Only exposed internally
+      - "8080"
     environment:
       - RUST_LOG=info
       - API_URL=http://backend:8081
@@ -14,30 +14,30 @@ services:
     build:
       context: ./app/backend
     expose:
-      - "8081" # Only exposed internally
+      - "8081"
     environment:
       - RUST_LOG=info
-    # Database commented out for testing
-    # environment:
-    #   - DATABASE_URL=postgres://user:password@db:5432/appdb
-    # depends_on:
-    #   - db
+      - DATABASE_URL=postgres://user:password@db:5432/appdb
+    depends_on:
+      - db
 
   nginx:
     build:
       context: ./app/nginx
     ports:
-      - "80:80" # Only external port
+      - "80:80"
     depends_on:
       - frontend
 
-  # db:
-  #   image: postgres:15-alpine
-  #   environment:
-  #     - POSTGRES_USER=user
-  #     - POSTGRES_PASSWORD=password
-  #     - POSTGRES_DB=appdb
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-# volumes:
-#   postgres_data:
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=appdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:

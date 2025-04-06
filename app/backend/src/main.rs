@@ -14,14 +14,15 @@ async fn search(
     db: web::Data<PgPool>,
 ) -> actix_web::Result<HttpResponse> {
     if let Some(q) = query.get("q") {
-        // Example query - replace with your actual database logic
-        let results = vec![
-            SearchResult {
-                title: format!("Result for: {}", q),
-                description: "This is a sample result".to_string(),
-                url: "https://example.com".to_string(),
-            }
-        ];
+        // Real database query
+        let results = sqlx::query_as!(
+            SearchResult,
+            "SELECT title, description, url FROM search_results WHERE title ILIKE $1 OR description ILIKE $1",
+            format!("%{}%", q)
+        )
+        .fetch_all(db.get_ref())
+        .await
+        .map_err(|_| actix_web::error::ErrorInternalServerError("Database error"))?;
         
         Ok(HttpResponse::Ok().json(results))
     } else {

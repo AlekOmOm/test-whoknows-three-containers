@@ -1,51 +1,20 @@
-# frontend/Dockerfile
-# ---- Stage 1: Builder ----
-   FROM rust:1.81 AS builder
+FROM rust:1.81 AS builder
+WORKDIR /app/frontend
+# Fix cargo lock handling
+COPY Cargo.toml ./
+RUN mkdir -p src && echo 'fn main() {}' > src/main.rs
+RUN cargo fetch
+# Remove the dummy file and copy actual source
+RUN rm -rf src
+COPY src ./src
+COPY templates ./templates
+COPY static ./static
+RUN cargo build --release
 
-
-   # Install build dependencies
-   RUN apt-get update && apt-get install -y --no-install-recommends libssl-dev pkg-config \
-       && apt-get clean \
-       && rm -rf /var/lib/apt/lists/*
-
-   WORKDIR /app/frontend
-
-   # Copy manifests (Cargo.toml and Cargo.lock) - for better caching
-   COPY Cargo.toml ./
-   COPY Cargo.lock* ./
-
-   RUN if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
-
-   # Build dependencies
-   RUN mkdir src \
-       && echo 'fn main() {println!("Building dependencies...")}' > src/main.rs \
-       && cargo build --release \
-       && rm -rf src \
-       && rm -f target/release/deps/*
-
-   # Copy source and build
-   COPY src ./src
-   COPY templates ./templates
-   COPY static ./static
-
-   RUN cargo build --release
-
-   # ---- Stage 2: Runtime ----
-   FROM debian:bookworm-slim
-
-   RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
-       && apt-get clean \
-       && rm -rf /var/lib/apt/lists/*
-
-   WORKDIR /app/frontend
-
-   # Create data directory
-   RUN mkdir -p /app/data
-
-   COPY --from=builder /app/frontend/static ./static
-   COPY --from=builder /app/frontend/templates ./templates
-   COPY --from=builder /app/frontend/target/release/frontend /usr/local/bin/frontend
-
-
-   EXPOSE 8080
-   CMD ["frontend"]
+FROM debian:bookworm-slim
+WORKDIR /app/frontend
+COPY --from=builder /app/frontend/static ./static
+COPY --from=builder /app/frontend/templates ./templates
+COPY --from=builder /app/frontend/target/release/frontend /usr/local/bin/frontend
+EXPOSE 8080
+CMD ["frontend"]
