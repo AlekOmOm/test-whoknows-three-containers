@@ -12,6 +12,12 @@ COPY static ./static
 RUN cargo build --release
 
 FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app/frontend
 COPY --from=builder /app/frontend/static ./static
 COPY --from=builder /app/frontend/templates ./templates
