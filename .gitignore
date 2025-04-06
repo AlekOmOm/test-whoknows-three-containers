@@ -1,0 +1,7 @@
+/target
+**/*.rs.bk
+Cargo.lock
+.env
+app/frontend/target/
+app/backend/target/
+debug/

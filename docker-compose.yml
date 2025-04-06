@@ -1,0 +1,43 @@
+services:
+  frontend:
+    build:
+      context: ./app/frontend
+    expose:
+      - "8080" # Only exposed internally
+    environment:
+      - RUST_LOG=info
+      - API_URL=http://backend:8081
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./app/backend
+    expose:
+      - "8081" # Only exposed internally
+    environment:
+      - RUST_LOG=info
+    # Database commented out for testing
+    # environment:
+    #   - DATABASE_URL=postgres://user:password@db:5432/appdb
+    # depends_on:
+    #   - db
+
+  nginx:
+    build:
+      context: ./app/nginx
+    ports:
+      - "80:80" # Only external port
+    depends_on:
+      - frontend
+
+  # db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_USER=user
+  #     - POSTGRES_PASSWORD=password
+  #     - POSTGRES_DB=appdb
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+# volumes:
+#   postgres_data:
